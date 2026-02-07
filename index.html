@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <title>Notatki</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f9f9f9;
+            color: #333;
+            max-width: 700px;
+            margin: 50px auto;
+            padding: 0 20px;
+        }
+
+        h1, h2 {
+            text-align: center;
+            color: #444;
+        }
+
+        input, textarea {
+            width: 100%;
+            margin: 5px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        #notes {
+            margin-top: 30px;
+        }
+
+        .note {
+            background-color: white;
+            border-left: 5px solid #4CAF50;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .note-title {
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+            color: #222;
+        }
+
+        .note-content {
+            font-size: 1rem;
+        }
+
+        .error {
+            color: red;
+            font-weight: bold;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Notatki</h1>
+
+    <h2>Dodaj nową notatkę</h2>
+    <input id="title" placeholder="Tytuł">
+    <textarea id="content" placeholder="Treść notatki"></textarea>
+    <button onclick="addNote()">Dodaj notatkę</button>
+
+    <h2>Lista notatek</h2>
+    <div id="notes"></div>
+
+    <script>
+        const apiUrl = "http://localhost:8000/notes";
+
+        async function fetchNotes() {
+            try {
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                const notesDiv = document.getElementById("notes");
+                notesDiv.innerHTML = "";
+
+                if (data.error) {
+                    notesDiv.innerHTML = `<p class="error">${data.error}</p>`;
+                    return;
+                }
+
+                data.forEach(note => {
+                    const div = document.createElement("div");
+                    div.className = "note";
+                    div.innerHTML = `
+                        <div class="note-title">${note.title}</div>
+                        <div class="note-content">${note.content}</div>
+                    `;
+                    notesDiv.appendChild(div);
+                });
+            } catch (err) {
+                console.error(err);
+                document.getElementById("notes").innerHTML = `<p class="error">Błąd połączenia z backendem</p>`;
+            }
+        }
+
+        async function addNote() {
+            const title = document.getElementById("title").value;
+            const content = document.getElementById("content").value;
+
+            if (!title || !content) return alert("Wypełnij oba pola!");
+
+            try {
+                await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ title, content })
+                });
+
+                document.getElementById("title").value = "";
+                document.getElementById("content").value = "";
+
+                fetchNotes();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        fetchNotes();
+    </script>
+</body>
+</html>
